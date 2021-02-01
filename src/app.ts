@@ -1,7 +1,9 @@
 import Nebula from './core/nebula';
 
 async function main() {
-    const nebula = new Nebula("ODAyODYzMDMwMTk4OTkyOTM3.YA1adg.gtnNqKWZcw2J4EXF5q5wCLVaibY");
+    const token: string | undefined = process.env.NEBULA_BOT_TOKEN;
+    if (token == undefined) throw Error("Nebula bot token not found in environment variables")
+    const nebula = new Nebula(process.env.NEBULA_BOT_TOKEN as string);
     nebula.start();
 }
 
