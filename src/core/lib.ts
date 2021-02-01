@@ -1,3 +1,11 @@
+export function isToday(timestamp: number): boolean {
+  return (new Date(timestamp)).getDay() == (new Date(Date.now()).getDay());
+}
+
+export function isSameDay(timestamp1: number, timestamp2: number): boolean {
+  return (new Date(timestamp1)).getDay() == (new Date(timestamp2).getDay());
+}
+
 export function hash(string_to_hash: string): number {
     /**
      * @param {string} string_to_hash - The string to generate a hash code
