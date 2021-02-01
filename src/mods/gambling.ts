@@ -1,6 +1,99 @@
 import * as discord from 'discord.js';
 import * as db from '../core/database';
 
+export async function rockPaperScissors(user: discord.User, userProfile: db.IUser, betDirection: number, betAmount: number): Promise<Array<string>> {
+    const rollValue: number = Math.random();
+    var rollDirectionValue: number;
+    
+    switch (true) {
+        case (rollValue >= 2/3):
+            rollDirectionValue = 2;
+            break;
+        case (rollValue >= 1/3):
+            rollDirectionValue = 1;
+            break;
+        case (rollValue >= 0):
+            rollDirectionValue = 0;
+            break;
+        default:
+            rollDirectionValue = 0;
+            break;
+    }
+    var rollDirection: string;
+    switch(rollDirectionValue) {
+        case 0:
+            rollDirection = "rock";
+            break;
+        case 1:
+            rollDirection = "paper";
+            break;
+        case 2:
+            rollDirection = "scissors";
+            break;
+        default:
+            rollDirection = "rock"
+    }
+    var profit: number;
+    switch (true) {
+        case (betDirection == 0 && rollDirectionValue == 2):
+            profit = betAmount;
+            break;
+        case (betDirection == 1 && rollDirectionValue == 0):
+            profit = betAmount;
+            break;
+        case (betDirection == 2 && rollDirectionValue == 1):
+            profit = betAmount;
+            break;
+        case (betDirection == rollDirectionValue):
+            profit = 0;
+            break
+        default:
+            profit = -betAmount;
+    }
+    var outcome: string;
+    switch (true) {
+        case (profit == 0):
+            outcome = "tied";
+            break;
+        case (profit > 0):
+            outcome = "won";
+            break;
+        case (profit < 0):
+            outcome = "lost";
+            break;
+        default:
+            outcome = "tied";
+            break;
+    }
+    await db.updateUser(user.id, "balance", userProfile.balance + profit);
+    return [rollDirection, outcome, Math.abs(profit).toString(), (userProfile.balance + profit).toString()]
+}
+
+export function getRockPaperScissorsBet(betDirection: string): number | undefined {
+    switch (betDirection.toLowerCase()) {
+        case "rocks":
+            return 0;
+        case "rock":
+            return 0;
+        case "r":
+            return 0;
+        case "papers":
+            return 0;
+        case "paper":
+            return 1;
+        case "p":
+            return 1;
+        case "scissors":
+            return 2;
+        case "scissor":
+            return 2;
+        case "s":
+            return 2;
+        default:
+            return undefined;
+    }
+}
+
 export async function coinflip(user: discord.User, userProfile: db.IUser, betDirection: boolean, betAmount: number): Promise<Array<string>> {
     /**
      * The coinflip gambling game
@@ -21,14 +114,14 @@ export async function coinflip(user: discord.User, userProfile: db.IUser, betDir
     return [rollDirection, outcome, Math.abs(profit).toString(), (userProfile.balance + profit).toString()]
 }
 
-export function getCoinflipBet(betDirection: string) {
+export function getCoinflipBet(betDirection: string): boolean | undefined {
     /**
      * Returns coinflip bet as true or false states
      * 
      * @param {string} betDirection - The side of coin to bet on
      * @returns {boolean | undefined} - True for heads, false for tails, undefined for unknown bet
      */
-    switch(betDirection) {
+    switch(betDirection.toLowerCase()) {
         case "heads":
             return true;
         case "head":

@@ -98,8 +98,8 @@ export class GuildAction {
 
 export class DiscordBot implements IDiscordEvents{
     token: string;
-    private guildCommands: Map<string, GuildAction>;
-    private userCommands: Map<string, UserAction>;
+    protected guildCommands: Map<string, GuildAction>;
+    protected userCommands: Map<string, UserAction>;
     protected client: discord.Client;
     protected prefix: string = ".";
 

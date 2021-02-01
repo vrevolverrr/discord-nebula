@@ -106,6 +106,25 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
         });
     }
 
+    validateCurrency(message: discord.Message, user: db.IUser, createMessage: Function, betAmount: number | undefined): boolean {
+        // Check whether bet amount is valid
+        if (betAmount == undefined) {
+            message.channel.send(createMessage("❌ Invalid bet"));
+            return false;
+        }
+        // Checks whether user can afford the bet
+        if (user.balance < betAmount) {
+            message.channel.send(createMessage(`❌ You have insufficient balance of :dollar: ${user.balance}`));
+            return false;
+        }
+        // Checks whether bet is not zero
+        if (betAmount == 0) {
+            message.channel.send(createMessage("❌ Invalid bet"));
+            return false;
+        }
+        return true;
+    }
+
     /** Discord Events */
     onReady = () => {
         levels.XPManager.startVoiceXPMonitor();
@@ -148,7 +167,7 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
                 msg
             );
             const args: string[] = this.parseArguments(message);
-            const command: any = (this as any)[args[0]];
+            const command: GuildAction | undefined = this.guildCommands.get(args[0]);
 
             if (command == undefined) {
                 message.channel.send(createMessage("❌ Command not found"));
@@ -436,6 +455,44 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
     /** Gambling */
     gamblingThumbnail = "https://i.imgur.com/BvnksIe.png";
 
+    rockpaperscissors: GuildAction = new GuildAction({
+        name: ["rockpaperscissors", "rps"],
+        description: "Play a game of rock paper scissors",
+        usage: "rockpaperscissors <rock/paper/scissors> <amount> or rps <r/p/s> <amount>",
+        action: async (message: discord.Message, user: db.IUser) => {
+            const usage = this.createUsageResponse(
+                message,
+                "Rock Paper Scissors",
+                "Gambling", 
+                "rockpaperscissors <rock/paper/scissors> <amount> or rps <r/p/s> <amount>"
+            );
+            const createMessage = (msg: string) => 
+            this.createResponse(
+                message,
+                "Rock Paper Scissors",
+                "Gambling",
+                this.embedColor,
+                msg,
+                {customThumbnail: this.gamblingThumbnail}
+            );
+            
+            const args: string[] = this.parseArguments(message);
+            const betDirection: number | undefined = gambling.getRockPaperScissorsBet(args[0]);
+            const betAmount: number | undefined = economy.parseCurrencyAmount(user, args[1]);
+
+            // Checks whether bet direction is valid
+            if (betDirection == undefined) {
+                message.channel.send(usage);
+                return;
+            }
+            const currencyValid: boolean = this.validateCurrency(message, user, createMessage, betAmount);
+            if (!currencyValid) return;
+
+            const [rollDirection, outcome, profit, newBalance] = await gambling.rockPaperScissors(message.author, user, betDirection, betAmount as number);
+            message.channel.send(createMessage(`Outcome was **${rollDirection}**\nYou've ${outcome} ${(profit == '0') ? "" : profit}\nYour balance now is :dollar: ${newBalance}`));
+        }
+    })
+
     coinflip: GuildAction = new GuildAction({
         name: ["coinflip", "cf"],
         description: "Play a game of coinflip",
@@ -460,28 +517,16 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
             const args: string[] = this.parseArguments(message);
             const betDirection: boolean | undefined = gambling.getCoinflipBet(args[0]);
             const betAmount: number | undefined = economy.parseCurrencyAmount(user, args[1]);
-            
+    
             // Checks whether bet direction is valid
             if (betDirection == undefined) {
                 message.channel.send(usage);
                 return;
-            }
-            // Check whether bet amount is valid
-            if (betAmount == undefined) {
-                message.channel.send(createMessage("❌ Invalid bet"));
-                return;
-            }
-            // Checks whether user can afford the bet
-            if (user.balance < betAmount) {
-                message.channel.send(createMessage(`❌ You have insufficient balance of :dollar: ${user.balance}`));
-                return;
-            }
-            // Checks whether bet is not zero
-            if (betAmount == 0) {
-                message.channel.send(createMessage("❌ Invalid bet"));
-                return;
-            }
-            const [rollDirection, outcome, profit, newBalance] = await gambling.coinflip(message.author, user, betDirection, betAmount);
+            }    
+            const currencyValid: boolean = this.validateCurrency(message, user, createMessage, betAmount);
+            if (!currencyValid) return;
+
+            const [rollDirection, outcome, profit, newBalance] = await gambling.coinflip(message.author, user, betDirection, betAmount as number);
             message.channel.send(createMessage(`Outcome was **${rollDirection}**\nYou've ${outcome} ${profit}\nYour balance now is :dollar: ${newBalance}`));
         }
     });

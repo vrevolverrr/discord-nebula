@@ -13,7 +13,7 @@ export function match(user1: discord.User, user2: discord.User): EmbedField[] {
      * @returns {EmbedField[]} - An array of EmbedFields containing the results
      */
     var conclusion: string = "";
-    var resultValue: number = (lib.hash(user1.username) + lib.hash(user2.username)) % 101;
+    var resultValue: number = Math.abs((lib.hash(user1.username) + lib.hash(user2.username)) % 101);
 
     switch (true) {
         case (resultValue >= 90):
@@ -58,7 +58,7 @@ export function match(user1: discord.User, user2: discord.User): EmbedField[] {
         fields.push({name: "Person 2", value: user2.username, inline: true});
         fields.push({name: "Match Score", value: `${resultValue.toString()}/100`, inline: true});
         fields.push({name: "Conclusion", value: conclusion})
-
+        
         return fields;
 }
 

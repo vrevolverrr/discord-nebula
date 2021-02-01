@@ -12,8 +12,14 @@ export function parseCurrencyAmount(user: db.IUser, amount: string): number | un
     if (amount == "a" || amount == "all") {
         return user.balance;
     }
+    if (amount == "h" || amount == "half") {
+        return Math.round(user.balance / 2);
+    }
     var amountValue: number = parseInt(amount);
     if (Number.isNaN(amountValue)) {
+        return undefined;
+    }
+    if (amountValue < 0) {
         return undefined;
     }
     return amountValue;

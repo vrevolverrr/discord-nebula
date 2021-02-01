@@ -46,8 +46,6 @@ def update_user():
 def update_user_increment():
     update_data: Dict[str, Any] = json.loads(request.headers["Data"])
     update_data_keys: List[str] = list(update_data.keys())
-
-    print(update_data)
     db.update_user_column_increment(request.headers["UserID"], update_data_keys[0], update_data[update_data_keys[0]])
 
     return "Done", 200
