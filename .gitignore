@@ -1,0 +1,12 @@
+.vscode/
+build/
+logs/
+node_modules/
+
+database/Include/
+database/Lib/
+database/Scripts/
+database/nebula/__pycache__/
+
+database/pyvenv.cfg
+database/nebula/nebula.db

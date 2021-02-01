@@ -4,8 +4,34 @@
   "description": "The official bot for Nebula Discord server",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc -p ./src",
+    "start": "npm run build && node --trace-warnings ./build/app.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vrevolverrr/discord-nebula.git"
+  },
+  "keywords": [
+    "discord",
+    "bot"
+  ],
   "author": "Bryan Soong",
-  "license": "ISC"
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vrevolverrr/discord-nebula/issues"
+  },
+  "homepage": "https://github.com/vrevolverrr/discord-nebula#readme",
+  "dependencies": {
+    "@discordjs/opus": "^0.3.3",
+    "bufferutil": "^4.0.3",
+    "discord.js": "^12.5.1",
+    "ffmpeg-static": "^4.2.7",
+    "libsodium-wrappers": "^0.7.8",
+    "utf-8-validate": "^5.0.4",
+    "zlib-sync": "^0.1.7"
+  },
+  "devDependencies": {
+    "@types/ws": "^7.4.0",
+    "typescript": "^4.1.3"
+  }
 }
