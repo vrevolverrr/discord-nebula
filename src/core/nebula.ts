@@ -21,6 +21,8 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
     createResponse(message: discord.Message, commandName: string, commandCategory: string, color: string,
         commandResponse: string, options: {useThumbnail?: boolean, customThumbnail?: string, fields?: EmbedField[], imageURL?: string} = {}) {
         /**
+         * Creates an embed as a response
+         * 
          * @param {discord.Message} message - Discord message object passed to the onMessage event.
          * @param {string} commandName - Name of the command called.
          * @param {string} commandCategory - Category of command called
@@ -49,6 +51,14 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
     }
 
     createPermErrorResponse(message: discord.Message, commandName: string, commandCategory: string): discord.MessageEmbed {
+        /**
+         * Creates an embed for permission error response
+         * 
+         * @param {discord.Message} message - The Discord message object
+         * @param {string} commandName - The name of the command
+         * @param {string} commandCategory - The category of the command
+         * @returns {discord.MessageEmbed} - The embed for the response
+         */
         return this.createResponse(
             message,
             commandName,
@@ -58,7 +68,16 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
         );
     }
 
-    createUsageResponse(message: discord.Message, commandName: string, commandCategory :string, usage: string) {
+    createUsageResponse(message: discord.Message, commandName: string, commandCategory: string, usage: string): discord.MessageEmbed {
+        /**
+         * Creates an embed for usage response
+         * 
+         * @param {discord.Message} message - The Discord message object
+         * @param {string} commandName - The name of the command
+         * @param {string} commandCategory - The category of the command
+         * @param {string} usage - The usage of the command
+         * @returns {discord.MessageEmbed} - The embed for the response
+         */
         return this.createResponse(
             message,
             commandName,
@@ -68,9 +87,15 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
         );
     }
 
-    async aboveRole(message: discord.Message, roleID: string) {
+    async aboveRole(message: discord.Message, roleID: string): Promise<boolean> {
+        /**
+         * Compares the highest role of a user with a given role in the server
+         * 
+         * @param {discord.Message} message - The Discord message object
+         * @param {string} roleID - The ID of the role to compare with
+         * @returns {Promise<boolean>} - A promise which resolves to true or false
+         */
         const guildMember = await message.guild?.members.fetch(message.author) as discord.GuildMember;
-
         return new Promise((resolve, reject) => {
             guildMember.guild.roles.fetch(roleID).catch(err => {
                 logger.error(`Unable to fetch role for ID ${roleID} | ${err}`)
