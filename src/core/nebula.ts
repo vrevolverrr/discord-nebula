@@ -85,17 +85,17 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
 
     /** Discord Events */
     onReady = () => {
-        levels.startVoiceXPMonitor();
-        levels.startUpdateDatabaseXP();
+        levels.XPManager.startVoiceXPMonitor();
+        levels.XPManager.startUpdateDatabaseXP();
     };
 
     onVoiceStateUpdate = (oldState: discord.VoiceState, newState: discord.VoiceState) => {
         const userID: string = oldState.id;
 
         if (newState.channelID && !newState.deaf && !newState.mute) {
-            levels.setUserActive(userID);
+            levels.XPManager.setUserActive(userID);
         } else {
-            levels.setUserInactive(userID);
+            levels.XPManager.setUserInactive(userID);
         }
     };
 

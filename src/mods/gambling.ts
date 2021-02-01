@@ -5,11 +5,11 @@ export async function coinflip(user: discord.User, userProfile: db.IUser, betDir
     /**
      * The coinflip gambling game
      * 
-     * @param {discord.User} user - The Discord user object usually obtained from message.author
-     * @param {db.IUser} userProfile - The database object of the user
+     * @param {discord.User} user - The Discord user playing the game
+     * @param {db.IUser} userProfile - The database user profile object of the user
      * @param {boolean} betDirection - The side of coin to bet on. True for heads and False for tails
-     * @param {number} betAmount - The amount of money to bet with.
-     * @returns {Array<string>} - Returns the rolled direction (heads / tails), outcome (win / lose) and the profit ( = betAmount)
+     * @param {number} betAmount - The amount of money to bet with
+     * @returns {Array<string>} - The rolled direction (heads / tails), outcome (win / lose), profit ( = betAmount) and the balance
      */
     const rollDirectionBool: boolean = Math.random() > 0.5;
     const profit = (betDirection == rollDirectionBool) ? betAmount : -betAmount
@@ -26,7 +26,7 @@ export function getCoinflipBet(betDirection: string) {
      * Returns coinflip bet as true or false states
      * 
      * @param {string} betDirection - The side of coin to bet on
-     * @returns {boolean | undefined} - Returns true for heads, false for tails, undefined for unknown bet
+     * @returns {boolean | undefined} - True for heads, false for tails, undefined for unknown bet
      */
     switch(betDirection) {
         case "heads":

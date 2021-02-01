@@ -3,9 +3,15 @@ import * as lib from '../core/lib';
 import * as db from '../core/database';
 import { EmbedField } from '../core/bot';
 import { getLevel, levelXP } from '../mods/levels';
-import { IUser } from '../core/database';
 
 export function match(user1: discord.User, user2: discord.User): EmbedField[] {
+    /**
+     * Calculates the pseudocompatibility between two users by obtaining the sum of username hashcodes
+     * 
+     * @param {discord.User} user1 - The first Discord user to match
+     * @param {discord.User} user2 - The second Discord user to match
+     * @returns {EmbedField[]} - An array of EmbedFields containing the results
+     */
     var conclusion: string = "";
     var resultValue: number = (lib.hash(user1.username) + lib.hash(user2.username)) % 101;
 
@@ -56,7 +62,14 @@ export function match(user1: discord.User, user2: discord.User): EmbedField[] {
         return fields;
 }
 
-export async function createProfileEmbed(message: discord.Message, user: IUser): Promise<discord.MessageEmbed> {
+export async function createProfileEmbed(message: discord.Message, user: db.IUser): Promise<discord.MessageEmbed> {
+    /**
+     * Creates the profile embed of a user
+     * 
+     * @param {discord.Message} message - The Discord message object
+     * @param {db.IUser} user - The databse user profile object of the corresponding user
+     * @returns {discord.MessageEmbed} - The embed of the profile
+     */
     const avatarURL = message.author.avatarURL({size: 128})
     const guildMember = await message.guild?.members.fetch(message.author.id);
     const level = getLevel(user.xp);
@@ -77,14 +90,26 @@ export async function createProfileEmbed(message: discord.Message, user: IUser):
     return profileEmbed;
 }
 
-export async function updateRep(selfUser: discord.User, targetUser: discord.User) {
-    const target: IUser = await db.fetchUser(targetUser.id);
+export async function updateRep(selfUser: discord.User, targetUser: discord.User): Promise<void> {
+    /**
+     * Award a user a reputation point
+     * 
+     * @param {discord.User} selfUser - The Discord user awarding the reputation point
+     * @param {discord.User} targetUser - The Discord user receiving the repuation point
+     */
+    const target: db.IUser = await db.fetchUser(targetUser.id);
     await db.updateUser(targetUser.id, "rep", target.rep + 1);
     await db.updateUser(selfUser.id, "lastRep", Date.now());
 }
 
 export async function updateUnrep(selfUser: discord.User, targetUser: discord.User) {
-    const target: IUser = await db.fetchUser(targetUser.id);
+    /**
+     * Removes reputation point from a user
+     * 
+     * @param {discord.User} selfUser - The Discord user removing the reputation point
+     * @param {discord.User} targetUser - The Discord user whose repuation point is being removed
+     */
+    const target: db.IUser = await db.fetchUser(targetUser.id);
     await db.updateUser(targetUser.id, "rep", target.rep - 1);
     await db.updateUser(selfUser.id, "lastRep", Date.now());
 }
