@@ -57,6 +57,17 @@ class Database:
 
         self.db.commit()
 
+    def update_user_column_increment(self, user_id: str, column: str, change: int):
+        self.cursor.execute(
+            f"""
+            UPDATE Users
+            SET {column} = {column} + {change}
+            WHERE id = '{user_id}';
+            """
+        )
+
+        self.db.commit()
+
     def update_user_columns(self, user_id: str, columns_values: Dict[str, Any]):
         compound_set: str = ""
         keys: List[str] = list(columns_values.keys())

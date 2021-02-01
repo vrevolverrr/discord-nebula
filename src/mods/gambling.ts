@@ -15,5 +15,5 @@ export async function coinflip(user: discord.User, userProfile: db.IUser, betDir
 
     await db.updateUser(user.id, "balance", userProfile.balance + profit);
 
-    return [rollDirection, outcome, Math.abs(profit).toString()]
+    return [rollDirection, outcome, Math.abs(profit).toString(), (userProfile.balance + profit).toString()]
 }

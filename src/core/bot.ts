@@ -1,6 +1,7 @@
 import * as discord from 'discord.js';
 import * as logger from './logger';
 import * as db from './database';
+import * as level from '../mods/levels';
 
 export interface IDiscordEvents {
     onReady?(): void;
@@ -189,6 +190,9 @@ export class DiscordBot implements IDiscordEvents{
 
     private handleGuildMessage = async (message: discord.Message) => {
         if (message.author.bot) return;
+
+        level.increaseChatXP(message.author.id);
+
         if (!message.content.startsWith(this.prefix)) return;
 
         logger.info(`${message.author.username} issued guild command : ${message.content}`);

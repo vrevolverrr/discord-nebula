@@ -84,11 +84,19 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
     }
 
     /** Discord Events */
-    onReady = () => logger.info("Ready");
+    onReady = () => {
+        levels.startVoiceXPMonitor();
+        levels.startUpdateDatabaseXP();
+    };
 
     onVoiceStateUpdate = (oldState: discord.VoiceState, newState: discord.VoiceState) => {
-        console.log(oldState)
-        console.log(newState)
+        const userID: string = oldState.id;
+
+        if (newState.channelID && !newState.deaf && !newState.mute) {
+            levels.setUserActive(userID);
+        } else {
+            levels.setUserInactive(userID);
+        }
     };
 
     /** Discord Commands */
@@ -420,14 +428,14 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
             return;
         }
 
-        const [rollDirection, outcome, profit] = await gambling.coinflip(message.author, user, betDirection, betAmount);
+        const [rollDirection, outcome, profit, newBalance] = await gambling.coinflip(message.author, user, betDirection, betAmount);
         
         const response: discord.MessageEmbed = this.createResponse(
             message,
             "Coinflip",
             "Gambling",
             this.embedColor,
-            `Outcome was **${rollDirection}**\nYou've ${outcome} ${profit}\nYour balance now is :dollar: ${user.balance + profit}`,
+            `Outcome was **${rollDirection}**\nYou've ${outcome} ${profit}\nYour balance now is :dollar: ${newBalance}`,
             {customThumbnail: this.gamblingThumbnail}
         );
         message.channel.send(response);

@@ -52,6 +52,26 @@ export function updateUser(userID: string, column: string, value: any): Promise<
     });
 }
 
+export function updateUserIncrement(userID: string, column: string, change: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+        get({host: dbHost, port: port, path: "/updateUserIncrement", headers: {"UserID": userID, "Data": JSON.stringify({[column]: change})}}, resp => {
+            let data: string = "";
+    
+            resp.on('data', chunk => {
+                data += chunk;
+            });
+
+            resp.on('end', () => {
+                resolve();
+            });
+
+            resp.on('error', () => {
+                reject();
+            });
+        });
+    });
+}
+
 export function fetchUser(userID: string): Promise<IUser> {
     return new Promise((resolve, reject) => {
         get({host: dbHost, port: port, path: "/fetchUser", headers: {"UserID": userID}}, resp => {
