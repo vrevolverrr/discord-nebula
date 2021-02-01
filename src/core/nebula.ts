@@ -141,14 +141,12 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
 
     /** Social */
     profile: GuildAction = new GuildAction("profile", async (message: discord.Message, user: db.IUser) => {
-        const usage =
-            this.createUsageResponse(
-                message,
-                "Profile",
-                "Social",
-                "profile or profile <setting> <value>"
-            );
-
+        const usage = this.createUsageResponse(
+            message,
+            "Profile",
+            "Social",
+            "profile or profile <setting> <value>"
+        );
         const colorUsage = 
             this.createUsageResponse(
                 message,
@@ -198,13 +196,12 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
     });
 
     rep: GuildAction = new GuildAction("rep", async (message: discord.Message, user: db.IUser) => {
-        const createUsage = () =>
-            this.createUsageResponse(
-                message,
-                "Reputation",
-                "Social",
-                "rep <@user>"
-            );
+        const usage = this.createUsageResponse(
+            message,
+            "Reputation",
+            "Social",
+            "rep <@user>"
+        );
         const createMessage = (msg: string) =>
             this.createResponse(
                 message,
@@ -217,7 +214,7 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
         const mentions: discord.GuildMember[] = message.mentions.members?.array() as discord.GuildMember[];
 
         if (mentions.length == 0) {
-            message.channel.send(createUsage());
+            message.channel.send(usage);
             return;
         }
 
@@ -236,13 +233,12 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
     });
 
     unrep: GuildAction = new GuildAction("unrep", async (message: discord.Message, user: db.IUser) => {
-        const usage =
-            this.createUsageResponse(
-                message,
-                "Reputation",
-                "Social",
-                "unrep <@user>"
-            );
+        const usage = this.createUsageResponse(
+            message,
+            "Reputation",
+            "Social",
+            "unrep <@user>"
+        );
         const createMessage = (msg: string) =>
             this.createResponse(
                 message,
@@ -270,17 +266,16 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
     });
 
     match: GuildAction = new GuildAction("match", async (message: discord.Message, user: db.IUser) => {
-        const createUsage = () => {
-            return this.createUsageResponse(
-                message,
-                "Matchmaking",
-                "Social",
-                "match <@user1> <@user2>"
-            );
-        }
+        const usage = this.createUsageResponse(
+            message,
+            "Matchmaking",
+            "Social",
+            "match <@user1> <@user2>"
+        );
+    
         const users: discord.User[] = message.mentions.users.array();
         if (users.length == 0 || users.length > 2) {
-            message.channel.send(createUsage());
+            message.channel.send(usage);
             return;
         }
         const user1: discord.User = users[0];
@@ -300,13 +295,12 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
 
     /** Economy */
     transfer: GuildAction = new GuildAction(["transfer", "tf"], async (message: discord.Message, user: db.IUser) => {
-        const usage =
-            this.createUsageResponse(
-                message,
-                "Transfer",
-                "Economy",
-                "transfer <@target> <amount>"
-            );
+        const usage = this.createUsageResponse(
+            message,
+            "Transfer",
+            "Economy",
+            "transfer <@target> <amount>"
+        );
         const createMessage = (msg: string) =>
             this.createResponse(
                 message,
@@ -341,14 +335,12 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
     gamblingThumbnail = "https://i.imgur.com/BvnksIe.png";
 
     coinflip: GuildAction = new GuildAction(["coinflip", "cf"], async (message: discord.Message, user: db.IUser) => {
-        const usage =
-            this.createUsageResponse(
-                message,
-                "Coinflip",
-                "Gambling", 
-                "coinflip <heads/tails> <amount> or cf <h/t> <amount>"
-            );
-
+        const usage = this.createUsageResponse(
+            message,
+            "Coinflip",
+            "Gambling", 
+            "coinflip <heads/tails> <amount> or cf <h/t> <amount>"
+        );
         const createMessage = (msg: string) => 
             this.createResponse(
                 message,
