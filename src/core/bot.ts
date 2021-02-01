@@ -69,17 +69,31 @@ export interface EmbedField {
 }
 
 export class UserAction {
-    name: string | string[]; 
+    name: string | string[]
+    description: string;
+    usage: string;
     action: Function;
 
-    constructor(name: string | string[], action: IUserAction) { this.name = name; this.action = action }
+    constructor(options: {name: string | string[], description: string, usage: string, action: IUserAction}) {
+        this.name = options.name;
+        this.description = options.description;
+        this.usage = options.usage;
+        this.action = options.action;
+    }
 }
 
 export class GuildAction {
     name: string | string[];
+    description: string;
+    usage: string;
     action: Function;
 
-    constructor(name: string | string[], action: IGuildAction) { this.name = name; this.action = action }
+    constructor(options: {name: string | string[], description: string, usage: string, action: IGuildAction}) {
+        this.name = options.name;
+        this.description = options.description;
+        this.usage = options.usage;
+        this.action = options.action;
+    }
 }
 
 export class DiscordBot implements IDiscordEvents{
@@ -168,7 +182,6 @@ export class DiscordBot implements IDiscordEvents{
                 }
             };
         });
-
         logger.info(`Registered ${guildCommands.length} guild command(s) | ${guildCommands.join(", ")}`);
         logger.info(`Registered ${userCommands.length} user command(s) | ${userCommands.join(", ")}`);
     }
@@ -191,7 +204,7 @@ export class DiscordBot implements IDiscordEvents{
     private handleGuildMessage = async (message: discord.Message) => {
         if (message.author.bot) return;
 
-        level.increaseChatXP(message.author.id);
+        level.XPManager.increaseChatXP(message.author.id);
 
         if (!message.content.startsWith(this.prefix)) return;
 

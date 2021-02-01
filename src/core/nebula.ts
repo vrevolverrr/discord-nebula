@@ -49,25 +49,23 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
     }
 
     createPermErrorResponse(message: discord.Message, commandName: string, commandCategory: string): discord.MessageEmbed {
-        const response: discord.MessageEmbed = this.createResponse(
+        return this.createResponse(
             message,
             commandName,
             commandCategory,
             this.embedColor,
             `You do not have sufficient permissions to do that`
         );
-        return response;
     }
 
     createUsageResponse(message: discord.Message, commandName: string, commandCategory :string, usage: string) {
-        const response: discord.MessageEmbed = this.createResponse(
+        return this.createResponse(
             message,
             commandName,
             commandCategory,
             this.embedColor,
             "Usage: `" + usage + "`"
         );
-        return response;
     }
 
     async aboveRole(message: discord.Message, roleID: string) {
@@ -101,281 +99,365 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
 
     /** Discord Commands */
     /** Utils */
-    ping: GuildAction = new GuildAction("ping", async (message: discord.Message, user: db.IUser) => {
-        const response: discord.MessageEmbed = this.createResponse(
-            message,
-            "Ping",
-            "Utils",
-            this.embedColor,
-            "✅ Websocket latency is `" + this.client.ws.ping.toString() + "ms`",
-        );
+    help: GuildAction = new GuildAction({
+        name: "help",
+        description: "Show detailed usage information for a command",
+        usage: "help <command>",
+        action: (message: discord.Message, user: db.IUser) => {
+            const createHelpMessage = (command: GuildAction) => this.createResponse(
+                message,
+                (typeof command.name == "string") ? `${this.prefix}${command.name}` : `${this.prefix}${command.name[0]}`,
+                "Help",
+                this.embedColor,
+                command.description,
+                {fields: [
+                    {name: "Aliases", value: (typeof command.name == "string") ? command.name : command.name.join(", ")},
+                    {name: "Usage", value: "`" + command.usage + "`"}
+                ]}
+            );
+            const createMessage = (msg: string) => this.createResponse(
+                message,
+                "Help",
+                "Utils",
+                this.embedColor,
+                msg
+            );
+            const args: string[] = this.parseArguments(message);
+            const command: any = (this as any)[args[0]];
 
-        message.channel.send(response);
+            if (command == undefined) {
+                message.channel.send(createMessage("❌ Command not found"));
+                return;
+            };
+            message.channel.send(createHelpMessage(command));
+        }
     });
 
-    clear: GuildAction = new GuildAction("clear", async (message: discord.Message, user: db.IUser) => {
-        if (!(this.aboveRole(message, "324094340135911424"))) {
-            message.channel.send(this.createPermErrorResponse(message, "Clear Messages", "Utils"));
-            return;
+    ping: GuildAction = new GuildAction({
+        name: "ping",
+        description: "Check the websocket latency of the bot",
+        usage: "ping",
+        action: async (message: discord.Message, user: db.IUser) => {
+            const response: discord.MessageEmbed = this.createResponse(
+                message,
+                "Ping",
+                "Utils",
+                this.embedColor,
+                "✅ Websocket latency is `" + this.client.ws.ping.toString() + "ms`",
+            );
+            message.channel.send(response);
         }
+    });
 
-        const arg: string = this.parseArguments(message).join(" ");
-        const channel: discord.TextChannel = message.channel as discord.TextChannel;
-        
-        const numMessages: number = parseInt(arg);
-        
-        if (Number.isNaN(numMessages)) {
-            message.channel.send(this.createUsageResponse(message, "Clear Messages", "Utils", "clear <number>"));
-            return;
-        } else {
-            await channel.bulkDelete(numMessages + 1);
+    clear: GuildAction = new GuildAction({
+        name: "clear",
+        description: "Delete messages in bulk",
+        usage: "clear <number>",
+        action: async (message: discord.Message, user: db.IUser) => {
+            const usage = this.createUsageResponse(
+                message,
+                "Clear Messages",
+                "Utils",
+                "clear <number>"
+            );
+
+            const createMessage = (msg: string) => this.createResponse(
+                message,
+                "Clear Messages",
+                "Utils",
+                this.embedColor,
+                msg
+            )
+
+            if (!this.aboveRole(message, "324094340135911424")) {
+                message.channel.send(this.createPermErrorResponse(message, "Clear Messages", "Utils"));
+                return;
+            }
+            const arg: string = this.parseArguments(message).join(" ");
+            const channel: discord.TextChannel = message.channel as discord.TextChannel;
+            const numMessages: number = parseInt(arg);
+
+            if (Number.isNaN(numMessages)) {
+                message.channel.send(usage);
+                return;
+            }
+
+            if (numMessages < 1 || numMessages > 99) {
+                message.channel.send(createMessage("❌ Please specify a number in between 1 and 99"));
+                return;
+            }
+            
+            await channel.bulkDelete(numMessages + 1, true);
             channel.send("✅ Succesfully cleared `" + numMessages + " messages`").then(msg => {
                 msg.delete({timeout: 1500});
             });
         }
     });
 
-    test: GuildAction = new GuildAction("test", async (message: discord.Message) => {
-        console.log(message.mentions.members?.array())
-    });
-
     /** Social */
-    profile: GuildAction = new GuildAction("profile", async (message: discord.Message, user: db.IUser) => {
-        const usage = this.createUsageResponse(
-            message,
-            "Profile",
-            "Social",
-            "profile or profile <setting> <value>"
-        );
-        const colorUsage = 
-            this.createUsageResponse(
+    profile: GuildAction = new GuildAction({
+        name: ["profile", "pf"],
+        description: "Show your user profile or customise your profile",
+        usage: "profile or profile <setting> <value>",
+        action: async (message: discord.Message, user: db.IUser) => {
+            const usage = this.createUsageResponse(
                 message,
                 "Profile",
                 "Social",
-                "profile color <hexValue>"
+                "profile or profile <setting> <value>"
             );
+            const colorUsage = 
+                this.createUsageResponse(
+                    message,
+                    "Profile",
+                    "Social",
+                    "profile color <hexValue>"
+                );
 
-        const args: string[] = this.parseArguments(message);
+            const args: string[] = this.parseArguments(message);
 
-        const showUserProfile = async () => {
-            const profileEmbed = await social.createProfileEmbed(message, user);
-            message.channel.send(profileEmbed);
-        }
-
-        // Set profile functions
-        const setProfileColor = async (color: string) => {
-            if (!lib.validateColor(color)) {
-                message.channel.send(colorUsage);
-                return;
+            const showUserProfile = async () => {
+                const profileEmbed = await social.createProfileEmbed(message, user);
+                message.channel.send(profileEmbed);
             }
-            await db.updateUser(message.author.id, "color", `'${color}'`);
-            await message.channel.send("✅ Succesfully updated profile color");
-        }
 
-        const setProfileSettings = async (property: string, option: string) => {
-            switch(property) {
-                case "color":
-                    await setProfileColor(option);
+            // Set profile functions
+            const setProfileColor = async (color: string) => {
+                if (!lib.validateColor(color)) {
+                    message.channel.send(colorUsage);
+                    return;
+                }
+                await db.updateUser(message.author.id, "color", `'${color}'`);
+                await message.channel.send("✅ Succesfully updated profile color");
+            }
+
+            const setProfileSettings = async (property: string, option: string) => {
+                switch(property) {
+                    case "color":
+                        await setProfileColor(option);
+                        break;
+                    default:
+                        message.channel.send(usage);
+                }
+            }
+
+            switch(args.length) {
+                case 0:
+                    showUserProfile();
+                    break;
+                case 2:
+                    setProfileSettings(args[0], args[1]);
                     break;
                 default:
                     message.channel.send(usage);
+                    break
             }
         }
+    });
 
-        switch(args.length) {
-            case 0:
-                showUserProfile();
-                break;
-            case 2:
-                setProfileSettings(args[0], args[1]);
-                break;
-            default:
+    rep: GuildAction = new GuildAction({
+        name: "rep",
+        description: "Award a user a reputation point",
+        usage: "rep <@user>",
+        action: async (message: discord.Message, user: db.IUser) => {
+            const usage = this.createUsageResponse(
+                message,
+                "Reputation",
+                "Social",
+                "rep <@user>"
+            );
+            const createMessage = (msg: string) =>
+                this.createResponse(
+                    message,
+                    "Reputation",
+                    "Social",
+                    this.embedColor,
+                    msg
+                );
+
+            const mentions: discord.GuildMember[] = message.mentions.members?.array() as discord.GuildMember[];
+        
+            if (mentions.length == 0) {
                 message.channel.send(usage);
-                break
+                return;
+            }
+            if (lib.isToday(user.lastRep) && message.author.id !== "309642430532157440") {
+                message.channel.send(createMessage("❌ You have already done that today"));
+                return;
+            }
+            if (message.author.id == mentions[0].user.id) { 
+                message.channel.send(createMessage("❌ You cannot unrep yourself"));
+                return;
+            }
+
+            await social.updateRep(message.author, mentions[0].user);
+            message.channel.send(createMessage(`✅ Gave ${mentions[0].user.username} a reputation point`));
         }
     });
 
-    rep: GuildAction = new GuildAction("rep", async (message: discord.Message, user: db.IUser) => {
-        const usage = this.createUsageResponse(
-            message,
-            "Reputation",
-            "Social",
-            "rep <@user>"
-        );
-        const createMessage = (msg: string) =>
-            this.createResponse(
+    unrep: GuildAction = new GuildAction({
+        name: "unrep",
+        description: "Remove a reputation point from a user",
+        usage: "unrep <@user>",
+        action: async (message: discord.Message, user: db.IUser) => {
+            const usage = this.createUsageResponse(
                 message,
                 "Reputation",
                 "Social",
-                this.embedColor,
-                msg
+                "unrep <@user>"
             );
-
-        const mentions: discord.GuildMember[] = message.mentions.members?.array() as discord.GuildMember[];
-
-        if (mentions.length == 0) {
-            message.channel.send(usage);
-            return;
+            const createMessage = (msg: string) =>
+                this.createResponse(
+                    message,
+                    "Reputation",
+                    "Social",
+                    this.embedColor,
+                    msg
+                );
+                
+            const mentions: discord.GuildMember[] = message.mentions.members?.array() as discord.GuildMember[];
+            if (mentions.length == 0) {
+                message.channel.send(usage);
+                return;
+            }
+            if (lib.isToday(user.lastRep) && message.author.id !== "309642430532157440") {
+                message.channel.send(createMessage("❌ You have already done that today"));
+                return;
+            }
+            if (message.author.id == mentions[0].user.id) {
+                message.channel.send(createMessage("❌ You cannot unrep yourself"));
+                return;
+            }
+            await social.updateUnrep(message.author, mentions[0].user);
+            message.channel.send(createMessage(`✅ Removed a reputation point from ${mentions[0].user.username}`));
         }
-
-        if (lib.isToday(user.lastRep) && message.author.id !== "309642430532157440") {
-            message.channel.send(createMessage("❌ You have already done that today"));
-            return;
-        }
-
-        if (message.author.id == mentions[0].user.id) { 
-            message.channel.send(createMessage("❌ You cannot unrep yourself"));
-            return;
-        }
-
-        await social.updateRep(message.author, mentions[0].user);
-        message.channel.send(createMessage(`✅ Gave ${mentions[0].user.username} a reputation point`));
     });
 
-    unrep: GuildAction = new GuildAction("unrep", async (message: discord.Message, user: db.IUser) => {
-        const usage = this.createUsageResponse(
-            message,
-            "Reputation",
-            "Social",
-            "unrep <@user>"
-        );
-        const createMessage = (msg: string) =>
-            this.createResponse(
+    match: GuildAction = new GuildAction({
+        name: "match",
+        description: "Check the compatability between two users",
+        usage: "match <@user1> <@user2>",
+        action: async (message: discord.Message, user: db.IUser) => {
+            const usage = this.createUsageResponse(
                 message,
-                "Reputation",
+                "Matchmaking",
                 "Social",
-                this.embedColor,
-                msg
+                "match <@user1> <@user2>"
             );
-
-        const mentions: discord.GuildMember[] = message.mentions.members?.array() as discord.GuildMember[];
-        if (mentions.length == 0) {
-            message.channel.send(usage);
-            return;
-        }
-        if (lib.isToday(user.lastRep) && message.author.id !== "309642430532157440") {
-            message.channel.send(createMessage("❌ You have already done that today"));
-            return;
-        }
-        if (message.author.id == mentions[0].user.id) {
-            message.channel.send(createMessage("❌ You cannot unrep yourself"));
-            return;
-        }
-        await social.updateUnrep(message.author, mentions[0].user);
-        message.channel.send(createMessage(`✅ Removed a reputation point from ${mentions[0].user.username}`));
-    });
-
-    match: GuildAction = new GuildAction("match", async (message: discord.Message, user: db.IUser) => {
-        const usage = this.createUsageResponse(
-            message,
-            "Matchmaking",
-            "Social",
-            "match <@user1> <@user2>"
-        );
     
-        const users: discord.User[] = message.mentions.users.array();
-        if (users.length == 0 || users.length > 2) {
-            message.channel.send(usage);
-            return;
-        }
-        const user1: discord.User = users[0];
-        const user2: discord.User = (users.length == 2) ? users[1] : message.author
-        const result: EmbedField[] = social.match(user1, user2);
+            const users: discord.User[] = message.mentions.users.array();
+            if (users.length == 0 || users.length > 2) {
+                message.channel.send(usage);
+                return;
+            }
+            const user1: discord.User = users[0];
+            const user2: discord.User = (users.length == 2) ? users[1] : message.author
+            const result: EmbedField[] = social.match(user1, user2);
 
-        const response: discord.MessageEmbed = this.createResponse(
-            message,
-            "Matchmaking",
-            "Social",
-            this.embedColor,
-            "Here's what I think about this ship",
-            {useThumbnail: true, fields: result}
-        );
-        message.channel.send(response);
+            const response: discord.MessageEmbed = this.createResponse(
+                message,
+                "Matchmaking",
+                "Social",
+                this.embedColor,
+                "Here's what I think about this ship",
+                {useThumbnail: true, fields: result}
+            );
+            message.channel.send(response);
+        }
     });
 
     /** Economy */
-    transfer: GuildAction = new GuildAction(["transfer", "tf"], async (message: discord.Message, user: db.IUser) => {
-        const usage = this.createUsageResponse(
-            message,
-            "Transfer",
-            "Economy",
-            "transfer <@target> <amount>"
-        );
-        const createMessage = (msg: string) =>
-            this.createResponse(
+    transfer: GuildAction = new GuildAction({
+        name: ["transfer", "tf"],
+        description: "Transfer funds to a user",
+        usage: "transfer <@user> <amount> or tf <@user> <amount>",
+        action: async (message: discord.Message, user: db.IUser) => {
+            const usage = this.createUsageResponse(
                 message,
                 "Transfer",
                 "Economy",
-                this.embedColor,
-                msg
+                "transfer <@user> <amount>"
             );
+            const createMessage = (msg: string) =>
+                this.createResponse(
+                    message,
+                    "Transfer",
+                    "Economy",
+                    this.embedColor,
+                    msg
+                );
+            const args: string[] = this.parseArguments(message);
+            const mentions: discord.GuildMember[] = message.mentions.members?.array() as discord.GuildMember[];
 
-        const args: string[] = this.parseArguments(message);
-        const mentions: discord.GuildMember[] = message.mentions.members?.array() as discord.GuildMember[];
-
-        if (mentions.length == 0 || args.length != 2) {
-            message.channel.send(usage);
-            return;
+            if (mentions.length == 0 || args.length != 2) {
+                message.channel.send(usage);
+                return;
+            }
+            const amount: number | undefined = economy.parseCurrencyAmount(user, args[1]);
+            const target: discord.GuildMember = mentions[0];
+            if (amount == undefined) {
+                message.channel.send(usage);
+                return;
+            }
+            if (user.balance < amount && message.author.id !== "309642430532157440") {
+                message.channel.send(createMessage("❌ You have insufficient funds"));
+                return;
+            }
+            await economy.transfer(message.author, user, target.user, amount);
+            message.channel.send(createMessage("✅ Succesfully transferred funds"));
         }
-        const amount: number | undefined = economy.parseCurrencyAmount(user, args[1]);
-        const target: discord.GuildMember = mentions[0];
-        if (amount == undefined) {
-            message.channel.send(usage);
-            return;
-        }
-        if (user.balance < amount && message.author.id !== "309642430532157440") {
-            message.channel.send(createMessage("❌ You have insufficient funds"));
-            return;
-        }
-        await economy.transfer(message.author, user, target.user, amount);
-        message.channel.send(createMessage("✅ Succesfully transferred funds"));
     });
 
     /** Gambling */
     gamblingThumbnail = "https://i.imgur.com/BvnksIe.png";
 
-    coinflip: GuildAction = new GuildAction(["coinflip", "cf"], async (message: discord.Message, user: db.IUser) => {
-        const usage = this.createUsageResponse(
-            message,
-            "Coinflip",
-            "Gambling", 
-            "coinflip <heads/tails> <amount> or cf <h/t> <amount>"
-        );
-        const createMessage = (msg: string) => 
-            this.createResponse(
+    coinflip: GuildAction = new GuildAction({
+        name: ["coinflip", "cf"],
+        description: "Play a game of coinflip",
+        usage: "coinflip <heads/tails> <amount> or cf <h/t> <amount>",
+        action: async (message: discord.Message, user: db.IUser) => {
+            const usage = this.createUsageResponse(
                 message,
                 "Coinflip",
-                "Gambling",
-                this.embedColor,
-                msg,
-                {customThumbnail: this.gamblingThumbnail}
+                "Gambling", 
+                "coinflip <heads/tails> <amount> or cf <h/t> <amount>"
             );
+            const createMessage = (msg: string) => 
+                this.createResponse(
+                    message,
+                    "Coinflip",
+                    "Gambling",
+                    this.embedColor,
+                    msg,
+                    {customThumbnail: this.gamblingThumbnail}
+                );
 
-        const args: string[] = this.parseArguments(message);
-        const betDirection: boolean | undefined = gambling.getCoinflipBet(args[0]);
-        const betAmount: number | undefined = economy.parseCurrencyAmount(user, args[1]);
-
-        // Checks whether bet direction is valid
-        if (betDirection == undefined) {
-            message.channel.send(usage);
-            return;
+            const args: string[] = this.parseArguments(message);
+            const betDirection: boolean | undefined = gambling.getCoinflipBet(args[0]);
+            const betAmount: number | undefined = economy.parseCurrencyAmount(user, args[1]);
+            
+            // Checks whether bet direction is valid
+            if (betDirection == undefined) {
+                message.channel.send(usage);
+                return;
+            }
+            // Check whether bet amount is valid
+            if (betAmount == undefined) {
+                message.channel.send(createMessage("❌ Invalid bet"));
+                return;
+            }
+            // Checks whether user can afford the bet
+            if (user.balance < betAmount) {
+                message.channel.send(createMessage(`❌ You have insufficient balance of :dollar: ${user.balance}`));
+                return;
+            }
+            // Checks whether bet is not zero
+            if (betAmount == 0) {
+                message.channel.send(createMessage("❌ Invalid bet"));
+                return;
+            }
+            const [rollDirection, outcome, profit, newBalance] = await gambling.coinflip(message.author, user, betDirection, betAmount);
+            message.channel.send(createMessage(`Outcome was **${rollDirection}**\nYou've ${outcome} ${profit}\nYour balance now is :dollar: ${newBalance}`));
         }
-        // Check whether bet amount is valid
-        if (betAmount == undefined) {
-            message.channel.send(createMessage("❌ Invalid bet"));
-            return;
-        }
-        // Checks whether user can afford the bet
-        if (user.balance < betAmount) {
-            message.channel.send(createMessage(`❌ You have insufficient balance of :dollar: ${user.balance}`));
-            return;
-        }
-        // Checks whether bet is not zero
-        if (betAmount == 0) {
-            message.channel.send(createMessage("❌ Invalid bet"));
-            return;
-        }
-        const [rollDirection, outcome, profit, newBalance] = await gambling.coinflip(message.author, user, betDirection, betAmount);
-        message.channel.send(createMessage(`Outcome was **${rollDirection}**\nYou've ${outcome} ${profit}\nYour balance now is :dollar: ${newBalance}`));
     });
 }
