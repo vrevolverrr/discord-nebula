@@ -60,7 +60,7 @@ export function getWeather(location: string): Promise<Array<any>> {
         fields.push({name: "Wind Speed", value: `💨 ${data["wind"]["speed"]}m/s`, inline: true});
         fields.push({name: "Wind Direction", value: `🧭 ${data["wind"]["deg"]}°`, inline: true});
         fields.push({name: "Sunrise", value: `☀️ ${sunrise[0]} (${sunrise[1]})`});
-        fields.push({name: "Sunrise", value: `🌙 ${sunset[0]} (${sunset[1]})`});
+        fields.push({name: "Sunset", value: `🌙 ${sunset[0]} (${sunset[1]})`});
         
         return [iconURL(data["weather"][0]["icon"]), data["name"], fields];
     }
