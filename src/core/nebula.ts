@@ -6,6 +6,7 @@ import * as logger from './logger';
 import * as economy from '../mods/economy';
 import * as gambling from '../mods/gambling';
 import * as levels from '../mods/levels';
+import * as lifestyle from '../mods/lifestyle';
 import * as social from '../mods/social';
 
 export default class NebulaBot extends DiscordBot implements IDiscordEvents {
@@ -238,6 +239,47 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
         }
     });
 
+    /** Lifestyle */
+    weather: GuildAction = new GuildAction({
+        name: "weather",
+        description: "Tell the weather of a location",
+        usage: "weather <location>",
+        action: async (message: discord.Message, user: db.IUser) => {
+            const usage = this.createUsageResponse(
+                message,
+                "Weather",
+                "Lifestyle",
+                "weather <location>"
+            );
+            const createMessage = (msg: string) => this.createResponse(
+                message,
+                "Weather",
+                "Lifestyle",
+                this.embedColor,
+                msg
+            );
+            const arg: string = this.parseArguments(message).join(" ");
+            if (arg == "") {
+                message.channel.send(usage)
+                return;
+            }
+            const [iconURL, location, result] = await lifestyle.getWeather(arg);
+            if (iconURL == undefined) {
+                message.channel.send(createMessage("❌ Location not found"))
+                return;
+            }
+            const response: discord.MessageEmbed = this.createResponse(
+                message,
+                "Weather",
+                "Lifestyle",
+                this.embedColor,
+                `Here's the weather today in **${location}**`,
+                {customThumbnail: iconURL, fields: result}
+            );
+            message.channel.send(response);
+        }
+    });
+
     /** Social */
     profile: GuildAction = new GuildAction({
         name: ["profile", "pf"],
@@ -250,13 +292,12 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
                 "Social",
                 "profile or profile <setting> <value>"
             );
-            const colorUsage = 
-                this.createUsageResponse(
-                    message,
-                    "Profile",
-                    "Social",
-                    "profile color <hexValue>"
-                );
+            const colorUsage = this.createUsageResponse(
+                message,
+                "Profile",
+                "Social",
+                "profile color <hexValue>"
+            );
 
             const args: string[] = this.parseArguments(message);
 
