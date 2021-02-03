@@ -136,23 +136,19 @@ export async function getWiki(query: string): Promise<Array<string | EmbedField 
     var {wikiURL, wikiPage, summary} = await getWikiPage(title);
 
     if (summary.includes("commonly refers to:")) {
+        // If result is a wikipedia index page, select the first index and get the page again
         title = wikiPage.querySelector('.mw-parser-output').querySelectorAll('li')[0].querySelector('a').getAttribute('title') || "";
         var {wikiURL, wikiPage, summary} = await getWikiPage(title);
     }
 
+    // Get a picture from wikipedia for the embed image
     var mainImage: string | undefined;
-    const infoBox: HTMLElement | undefined = wikiPage.querySelector(".infobox") || undefined;
-
-    if (infoBox == undefined) {
+    const infoBoxImage: HTMLElement = wikiPage.querySelector(".infobox")?.querySelector("img");
+    if (infoBoxImage == undefined) {
         mainImage = "https:" + getBestImage(wikiPage).getAttribute("src") || "";
     } else {
-        const infoBoxImage = infoBox.querySelector('img') || undefined;
-        if (infoBoxImage == undefined) {
-            mainImage = "https:" + getBestImage(wikiPage).getAttribute("src") || "";
-        } else {
-            mainImage = "https:" + infoBox.querySelector('img').getAttribute("src") || "";
-        }
+        mainImage = "https:" + infoBoxImage.getAttribute("src") || "";
     }
-    if (mainImage == "https:/static/images/footer/wikimedia-button.png") mainImage = undefined;
+
     return [mainImage, {name: title, value: `${summary.substring(0, 950)} [Read more.](${wikiURL})`}];
 }
