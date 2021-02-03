@@ -2,6 +2,15 @@ import * as discord from 'discord.js';
 import * as db from '../core/database';
 
 export async function rockPaperScissors(user: discord.User, userProfile: db.IUser, betDirection: number, betAmount: number): Promise<Array<string>> {
+    /**
+     * The rock paper scissors game
+     * 
+     * @param {discord.User} user - The Discord user playing the game
+     * @param {db.IUser} userProfile - The database profile object of the user
+     * @param {number} betDirection - The element to bet with (rock / paper / scissors)
+     * @param {number} betAmount - The amount of money to bet with
+     * @returns {Array<string>} - The rolled direction (rock / paper / scissors), outcome (win / lose), profit ( = betAmount) and the balance
+     */
     const rollValue: number = Math.random();
     var rollDirectionValue: number;
     

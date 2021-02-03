@@ -1,7 +1,8 @@
-import { get } from 'http';
+import { parse as parseHTML, HTMLElement } from 'node-html-parser';
 import { EmbedField } from '../core/bot';
+import * as lib from '../core/lib';
 
-export function getWeather(location: string): Promise<Array<any>> {
+export async function getWeather(location: string): Promise<Array<any>> {
     /**
      * Gets the weather from OpenWeatherMap API
      * 
@@ -65,21 +66,93 @@ export function getWeather(location: string): Promise<Array<any>> {
         return [iconURL(data["weather"][0]["icon"]), data["name"], fields];
     }
 
-    return new Promise((resolve, reject) => {
-        get(`http://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${process.env.OPENWEATHERMAP_API_KEY}&units=metric`, resp => {
-            let data: string = "";
-    
-            resp.on('data', chunk => {
-                data += chunk;
-            });
-            
-            resp.on('end', () => {
-                resolve(parseWeatherData(data));
-            });
+    const response: string = await lib.httpGetRequest(`http://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${process.env.OPENWEATHERMAP_API_KEY}&units=metric`);
+    return parseWeatherData(response);
+}
 
-            resp.on('error', () => {
-                reject();
-            });
-        });
-    });
+export async function getWiki(query: string): Promise<Array<string | EmbedField | undefined> | undefined> {
+    /**
+     * Get a summary of a wikipedia page given a query
+     * 
+     * @param {string} query - The query to search for
+     * @returns {Promise} - The results
+     */
+    interface WikiPageResult {
+        wikiURL: string;
+        wikiPage: HTMLElement;
+        summary: string;
+    }
+
+    const getSearchResults = async (query: string) => {
+        const params = {
+            "action": "query",
+            "format": "json",
+            "list": "search",
+            "srsearch": query,
+            "srlimit": "1",
+            "srinfo": "totalhits",
+            "srprop": "snippet"
+        }    
+        const searchResults = JSON.parse(await lib.httpsGetRequest(lib.parseURLWithParams("https://en.wikipedia.org/w/api.php", params)));
+        if (searchResults["query"]["searchinfo"]["totalhits"] == 0) {
+            console.log("und")
+            return undefined;
+        }
+        return searchResults;
+    }
+    const getWikiPage = async (title: string): Promise<WikiPageResult> => {
+        var wikiURL: string = `https://en.wikipedia.org/wiki/${title.split(' ').join('_')}`;
+        var wikiPage: HTMLElement = parseHTML(await lib.httpsGetRequest(wikiURL));
+        var content: HTMLElement[] = wikiPage.querySelector(".mw-parser-output").querySelectorAll('p');
+        var summary: string = "No information found";
+        for (const p of content) {
+            if (p.text.length > 200 || p.text.includes("commonly refers to:")) {
+                summary = p.text;
+                break;
+            }
+        }
+        return {wikiURL: wikiURL, wikiPage: wikiPage, summary: summary}
+    }
+    const getBestImage = (wikiPage: HTMLElement): HTMLElement => {
+        const bestImage: Array<HTMLElement | number> = [wikiPage, 0]; // Placeholders
+        const images: HTMLElement[] = wikiPage.querySelectorAll('img');
+        for (const image of images) {
+            const size: number = parseInt(image.getAttribute("width") || "0") + parseInt(image.getAttribute("height") || "0");
+            if (size > bestImage[1]) {
+                bestImage[1] = size;
+                bestImage[0] = image;
+            }
+        }
+        return bestImage[0] as HTMLElement
+    }
+
+    const searchResults = await getSearchResults(query);
+    
+    if (searchResults == undefined) {
+        return undefined
+    }
+
+    var title: string = searchResults["query"]["search"][0]["title"];
+    var {wikiURL, wikiPage, summary} = await getWikiPage(title);
+
+    if (summary.includes("commonly refers to:")) {
+        title = wikiPage.querySelector('.mw-parser-output').querySelectorAll('li')[0].querySelector('a').getAttribute('title') || "";
+        var {wikiURL, wikiPage, summary} = await getWikiPage(title);
+    }
+
+    var mainImage: string | undefined;
+    const infoBox: HTMLElement | undefined = wikiPage.querySelector(".infobox") || undefined;
+
+    if (infoBox == undefined) {
+        mainImage = "https:" + getBestImage(wikiPage).getAttribute("src") || "";
+    } else {
+        const infoBoxImage = infoBox.querySelector('img') || undefined;
+        if (infoBoxImage == undefined) {
+            mainImage = "https:" + getBestImage(wikiPage).getAttribute("src") || "";
+        } else {
+            mainImage = "https:" + infoBox.querySelector('img').getAttribute("src") || "";
+        }
+    }
+    if (mainImage == "https:/static/images/footer/wikimedia-button.png") mainImage = undefined;
+    return [mainImage, {name: title, value: `${summary.substring(0, 950)} [Read more.](${wikiURL})`}];
 }

@@ -1,3 +1,6 @@
+import * as http from 'http';
+import * as https from 'https';
+
 export function isToday(timestamp: number): boolean {
   return (new Date(timestamp)).getDay() == (new Date(Date.now()).getDay());
 }
@@ -23,4 +26,49 @@ export function hash(string_to_hash: string): number {
 
 export function validateColor(hexColor: string): boolean {
   return /^#[0-9A-F]{6}$/i.test(hexColor);
+}
+
+export function parseURLWithParams(URL: string, param: Record<string, string> | string[][]) {
+  const params = new URLSearchParams(param);
+  return URL + "?" + params.toString();
+}
+
+export async function httpGetRequest(options: string | http.RequestOptions | URL): Promise<string> {
+  return new Promise((resolve, reject) => {
+    http.get(options, resp => {
+        let data: string = "";
+
+        resp.on('data', chunk => {
+            data += chunk;
+        });
+        
+        resp.on('end', () => {
+            resolve(data);
+        });
+
+        resp.on('error', () => {
+            reject();
+        });
+    });
+  });
+}
+
+export async function httpsGetRequest(options: string | http.RequestOptions | URL): Promise<string> {
+  return new Promise((resolve, reject) => {
+    https.get(options, resp => {
+        let data: string = "";
+
+        resp.on('data', chunk => {
+            data += chunk;
+        });
+        
+        resp.on('end', () => {
+            resolve(data);
+        });
+
+        resp.on('error', () => {
+            reject();
+        });
+    });
+  });
 }

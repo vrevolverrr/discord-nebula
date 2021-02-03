@@ -280,6 +280,42 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
         }
     });
 
+    wiki: GuildAction = new GuildAction({
+        name: "wiki",
+        description: "Search a Wikipedia article",
+        usage: "wiki <term>",
+        action: async (message: discord.Message, user: db.IUser) => {
+            const usage = this.createUsageResponse(
+                message,
+                "Wiki",
+                "Lifestyle",
+                "wiki <term>"
+            );
+            const createMessage = (msg: string) => this.createResponse(
+                message,
+                "Wikipedia",
+                "Lifestyle",
+                this.embedColor,
+                msg
+            );
+            const arg: string = this.parseArguments(message).join(" ");
+            const results = await lifestyle.getWiki(arg);
+            if (results == undefined) {
+                message.channel.send(createMessage("❌ An article with matching keyword cannot be found"));
+                return;
+            }
+            const response: discord.MessageEmbed = this.createResponse(
+                message,
+                "Wikipedia Results",
+                "Lifestyle",
+                this.embedColor,
+                `Here's what I found`,
+                {fields: [results[1] as EmbedField], imageURL: results[0] as string}
+            );
+            message.channel.send(response);
+        }
+    })
+
     /** Social */
     profile: GuildAction = new GuildAction({
         name: ["profile", "pf"],
