@@ -1,6 +1,7 @@
 import * as discord from 'discord.js';
-import * as lib from '../core/lib';
 import * as db from '../core/database';
+import * as lib from '../core/lib';
+import * as logger from '../core/logger';
 import { EmbedField } from '../core/bot';
 import { getLevel, levelXP } from '../mods/levels';
 
@@ -97,19 +98,30 @@ export async function updateRep(selfUser: discord.User, targetUser: discord.User
      * @param {discord.User} selfUser - The Discord user awarding the reputation point
      * @param {discord.User} targetUser - The Discord user receiving the repuation point
      */
-    const target: db.IUser = await db.fetchUser(targetUser.id);
-    await db.updateUser(targetUser.id, "rep", target.rep + 1);
-    await db.updateUser(selfUser.id, "lastRep", Date.now());
+    return new Promise(async (resolve, reject) => {
+        const updateRep: Promise<void> =  db.updateUserIncrement(targetUser.id, "rep", 1);
+        const updateLastRep: Promise<void> = db.updateUser(selfUser.id, "lastRep", Date.now());
+        
+        Promise.all([updateRep, updateLastRep])
+        .then(_ => resolve())
+        .catch(err => {logger.info(`Error updating rep | ${err}`); reject()});
+    });
 }
 
-export async function updateUnrep(selfUser: discord.User, targetUser: discord.User) {
+export async function updateUnrep(selfUser: discord.User, targetUser: discord.User): Promise<void> {
     /**
      * Removes reputation point from a user
      * 
      * @param {discord.User} selfUser - The Discord user removing the reputation point
      * @param {discord.User} targetUser - The Discord user whose repuation point is being removed
+     * @returns {Promise}
      */
-    const target: db.IUser = await db.fetchUser(targetUser.id);
-    await db.updateUser(targetUser.id, "rep", target.rep - 1);
-    await db.updateUser(selfUser.id, "lastRep", Date.now());
+    return new Promise(async (resolve, reject) => {
+        const updateRep: Promise<void> =  db.updateUserIncrement(targetUser.id, "rep", -1);
+        const updateLastRep: Promise<void> = db.updateUser(selfUser.id, "lastRep", Date.now());
+        
+        Promise.all([updateRep, updateLastRep])
+        .then(_ => resolve())
+        .catch(err => {logger.info(`Error updating rep | ${err}`); reject()});
+    });
 }

@@ -1,5 +1,6 @@
 import * as discord from 'discord.js';
 import * as db from '../core/database';
+import * as economy from '../mods/economy';
 
 export async function rockPaperScissors(user: discord.User, userProfile: db.IUser, betDirection: number, betAmount: number): Promise<Array<string>> {
     /**
@@ -74,7 +75,7 @@ export async function rockPaperScissors(user: discord.User, userProfile: db.IUse
             outcome = "tied";
             break;
     }
-    await db.updateUser(user.id, "balance", userProfile.balance + profit);
+    await economy.add(user, profit);
     return [rollDirection, outcome, Math.abs(profit).toString(), (userProfile.balance + profit).toString()]
 }
 
@@ -118,8 +119,7 @@ export async function coinflip(user: discord.User, userProfile: db.IUser, betDir
     const rollDirection: string = (rollDirectionBool) ? "heads" : "tails";
     const outcome: string = (profit > 0) ? "won" : "lost";
 
-    await db.updateUser(user.id, "balance", userProfile.balance + profit);
-
+    await economy.add(user, profit);
     return [rollDirection, outcome, Math.abs(profit).toString(), (userProfile.balance + profit).toString()]
 }
 

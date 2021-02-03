@@ -9,18 +9,21 @@ export async function getWeather(location: string): Promise<Array<any>> {
      * @param {string} location - The location to obtain the weather
      * @returns - An array containing the weather icon URL, location name and resulting embed fields 
      */
-    const parseWeatherData = (jsonData: string) => {
+    const parseWeatherData = (jsonData: string): Array<string | EmbedField[] | undefined> => {
+        /**
+         * Parses the JSON data and retrieve the interesting data
+         * 
+         * @param {string} jsonData - The response data from OpenWeatherMap
+         */
         const data = JSON.parse(jsonData);
-        if (data["cod"] !== 200) {
-            return [undefined, undefined, []]
-        }
-
+        if (data["cod"] !== 200) return [undefined, undefined, []];
+        
         const iconURL = (iconCode: string) => `http://openweathermap.org/img/wn/${iconCode}@4x.png`;
-        const sunrise: string[] = new Date(data["sys"]["sunrise"] * 1000).toTimeString().split(" ").splice(0, 2)
-        const sunset: string[] = new Date(data["sys"]["sunset"] * 1000).toTimeString().split(" ").splice(0, 2)
+        const sunrise: string[] = new Date(data["sys"]["sunrise"] * 1000).toTimeString().split(" ").splice(0, 2);
+        const sunset: string[] = new Date(data["sys"]["sunset"] * 1000).toTimeString().split(" ").splice(0, 2);
         const fields: EmbedField[] = [];
-
-        const weatherID: number = data["weather"][0]["id"]
+        const weatherID: number = data["weather"][0]["id"];
+        
         var conditionEmoji: string;
         switch(true) {
             case (weatherID == 801):
@@ -53,7 +56,7 @@ export async function getWeather(location: string): Promise<Array<any>> {
             default:
                 conditionEmoji = "🌞";
         }
-
+        
         fields.push({name: "Condition", value: conditionEmoji + data["weather"][0]["description"].charAt(0).toUpperCase() + data["weather"][0]["description"].slice(1), inline: true})
         fields.push({name: "Humidity", value: `💦${data["main"]["humidity"]}%`, inline: true});
         fields.push({name: "Temperature", value: `🌡️ ${data["main"]["temp"]}°C`, inline: true});
@@ -82,17 +85,9 @@ export async function getWiki(query: string): Promise<Array<string | EmbedField 
         wikiPage: HTMLElement;
         summary: string;
     }
-
     const getSearchResults = async (query: string) => {
-        const params = {
-            "action": "query",
-            "format": "json",
-            "list": "search",
-            "srsearch": query,
-            "srlimit": "1",
-            "srinfo": "totalhits",
-            "srprop": "snippet"
-        }    
+        const params = {"action": "query", "format": "json", "list": "search", "srsearch": query,
+        "srlimit": "1", "srinfo": "totalhits", "srprop": "snippet"};
         const searchResults = JSON.parse(await lib.httpsGetRequest(lib.parseURLWithParams("https://en.wikipedia.org/w/api.php", params)));
         if (searchResults["query"]["searchinfo"]["totalhits"] == 0) {
             console.log("und")
@@ -101,19 +96,29 @@ export async function getWiki(query: string): Promise<Array<string | EmbedField 
         return searchResults;
     }
     const getWikiPage = async (title: string): Promise<WikiPageResult> => {
+        /**
+         * Gets the actual wikipedia page given the title
+         * 
+         * @param {string} title - The Wikipedia title of the page
+         * @returns {Promise}
+         */
         var wikiURL: string = `https://en.wikipedia.org/wiki/${title.split(' ').join('_')}`;
         var wikiPage: HTMLElement = parseHTML(await lib.httpsGetRequest(wikiURL));
         var content: HTMLElement[] = wikiPage.querySelector(".mw-parser-output").querySelectorAll('p');
         var summary: string = "No information found";
         for (const p of content) {
             if (p.text.length > 200 || p.text.includes("commonly refers to:")) {
-                summary = p.text;
-                break;
+                summary = p.text; break;
             }
         }
         return {wikiURL: wikiURL, wikiPage: wikiPage, summary: summary}
     }
     const getBestImage = (wikiPage: HTMLElement): HTMLElement => {
+        /**
+         * Gets the image with highest resolution of a Wikipedia page
+         * 
+         * @param {HTMLElement} wikiPage - The HTMLElement of the Wikipedia page
+         */
         const bestImage: Array<HTMLElement | number> = [wikiPage, 0]; // Placeholders
         const images: HTMLElement[] = wikiPage.querySelectorAll('img');
         for (const image of images) {
@@ -123,14 +128,11 @@ export async function getWiki(query: string): Promise<Array<string | EmbedField 
                 bestImage[0] = image;
             }
         }
-        return bestImage[0] as HTMLElement
+        return bestImage[0] as HTMLElement;
     }
 
     const searchResults = await getSearchResults(query);
-    
-    if (searchResults == undefined) {
-        return undefined
-    }
+    if (searchResults == undefined) return undefined;
 
     var title: string = searchResults["query"]["search"][0]["title"];
     var {wikiURL, wikiPage, summary} = await getWikiPage(title);
@@ -149,6 +151,5 @@ export async function getWiki(query: string): Promise<Array<string | EmbedField 
     } else {
         mainImage = "https:" + infoBoxImage.getAttribute("src") || "";
     }
-
     return [mainImage, {name: title, value: `${summary.substring(0, 950)} [Read more.](${wikiURL})`}];
 }

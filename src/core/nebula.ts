@@ -299,6 +299,10 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
                 msg
             );
             const arg: string = this.parseArguments(message).join(" ");
+            if (!lib.isEnglish(arg)) {
+                message.channel.send(createMessage("❌ Only English queries are supported"));
+                return
+            }
             const results = await lifestyle.getWiki(arg);
             if (results == undefined) {
                 message.channel.send(createMessage("❌ An article with matching keyword cannot be found"));
@@ -344,7 +348,7 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
 
             // Set profile functions
             const setProfileColor = async (color: string) => {
-                if (!lib.validateColor(color)) {
+                if (!lib.isColor(color)) {
                     message.channel.send(colorUsage);
                     return;
                 }
@@ -407,7 +411,7 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
                 return;
             }
             if (message.author.id == mentions[0].user.id) { 
-                message.channel.send(createMessage("❌ You cannot unrep yourself"));
+                message.channel.send(createMessage("❌ You cannot rep yourself"));
                 return;
             }
 
@@ -524,7 +528,7 @@ export default class NebulaBot extends DiscordBot implements IDiscordEvents {
                 message.channel.send(createMessage("❌ You have insufficient funds"));
                 return;
             }
-            await economy.transfer(message.author, user, target.user, amount);
+            await economy.transfer(message.author, target.user, amount);
             message.channel.send(createMessage("✅ Succesfully transferred funds"));
         }
     });

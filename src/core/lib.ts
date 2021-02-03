@@ -9,6 +9,14 @@ export function isSameDay(timestamp1: number, timestamp2: number): boolean {
   return (new Date(timestamp1)).getDay() == (new Date(timestamp2).getDay());
 }
 
+export function isColor(hexColor: string): boolean {
+  return /^#[0-9A-F]{6}$/i.test(hexColor);
+}
+
+export function isEnglish(text: string): boolean {
+  return /^[A-Za-z0-9!@#$%^&*(),.<>/?;:'"]*$/.test(text);
+}
+
 export function hash(string_to_hash: string): number {
     /**
      * @param {string} string_to_hash - The string to generate a hash code
@@ -22,10 +30,6 @@ export function hash(string_to_hash: string): number {
     }
 
     return hash;
-}
-
-export function validateColor(hexColor: string): boolean {
-  return /^#[0-9A-F]{6}$/i.test(hexColor);
 }
 
 export function parseURLWithParams(URL: string, param: Record<string, string> | string[][]) {

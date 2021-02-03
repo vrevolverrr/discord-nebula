@@ -43,8 +43,9 @@ export class XPManager {
     static databaseXP: any;
 
     // Users
-    static users: Map<string, number> = new Map();
+    static users: Map<string, number> = new Map();;
     static activeUsers: string[] = [];
+    static usersHasChanged: boolean = false;
 
     static increaseVoiceXP = (userID: string): void => {
         /**
@@ -52,6 +53,7 @@ export class XPManager {
          * 
          * @param {string} userID - The ID of the Discord user
          */
+        XPManager.usersHasChanged = true;
         const value = XPManager.users.get(userID);
         if (value == undefined) XPManager.users.set(userID, XPManager.VOICE_XP_PER_INTERVAL)
         else XPManager.users.set(userID, value + XPManager.VOICE_XP_PER_INTERVAL);
@@ -62,6 +64,7 @@ export class XPManager {
          * 
          * @param {string} userID - The ID of the Discord user
          */
+        XPManager.usersHasChanged = true;
         const value = XPManager.users.get(userID);
         if (value == undefined) XPManager.users.set(userID, XPManager.CHAT_XP_PER_MESSAGE);
         else XPManager.users.set(userID, value + XPManager.CHAT_XP_PER_MESSAGE);
@@ -109,14 +112,22 @@ export class XPManager {
          * Starts the interval function to periodically update user XP values in the database
          */
         XPManager.databaseXP = setInterval(async () => {
+            if (!XPManager.usersHasChanged) return;
+            // Only update if there were changes
             const entries = XPManager.users.entries();
+            const requests: Promise<any>[] = [];
             while (true) {
                 const entry = entries.next()
                 if (entry.done) break;
-                await db.updateUserIncrement(entry.value[0], "xp", entry.value[1]);
-                XPManager.users.delete(entry.value[0]);
+                requests.push(
+                    db.updateUserIncrement(entry.value[0], "xp", entry.value[1])
+                    .then(_ => XPManager.users.delete(entry.value[0]))
+                );
             }
+            await Promise.all(requests);
+            XPManager.usersHasChanged = false;
             logger.info("Updated database XP values");
+            
         }, XPManager.INTERVAL_TIME * 10);
         logger.info("Started update database XP interval function");
     }
