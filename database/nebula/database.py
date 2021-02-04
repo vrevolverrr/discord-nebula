@@ -5,14 +5,7 @@ from typing import Any, List, Dict
 
 class Database:
     def __init__(self):
-        try:
-            with open("config.json", "r") as f:
-                self.config = json.load(f)
-        except FileNotFoundError:
-            self.config = dict()
-            self.config["db_path"] = ""
-
-        self.db = sqlite3.connect(os.path.join(self.config["db_path"], "nebula.db"), check_same_thread=False)
+        self.db = sqlite3.connect(os.path.join(os.getcwd(), "database", "nebula", "nebula.db"), check_same_thread=False)
         self.cursor = self.db.cursor()
 
     def create_table(self):

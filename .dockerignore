@@ -1,0 +1,8 @@
+.vscode
+src
+node_modules
+database/Lib
+database/Include
+database/Scripts
+database/pyvenv.cfg
+*.map

@@ -10,3 +10,6 @@ database/nebula/__pycache__/
 
 database/pyvenv.cfg
 database/nebula/nebula.db
+database/nebula/nebula.db*
+
+Dockerfile

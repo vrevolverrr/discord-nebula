@@ -192,8 +192,8 @@ export class DiscordBot implements IDiscordEvents{
 
     start() {
         this.client.login(this.token)
-        .catch(_ => logger.error("Unable to login. Invalid token"))
         .then(_ => logger.info("Succesfully logged in"))
+        .catch(_ => logger.error("Unable to login. Invalid token"));
     }
 
     onMessage = (message: discord.Message): void => {
