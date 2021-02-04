@@ -4,8 +4,10 @@
   "description": "The official bot for Nebula Discord server",
   "main": "app.js",
   "scripts": {
+    "dockerbuild": "docker build -t vrevolver/discordnebula:0.1 .",
+    "dockerun": "docker run vrevolver/discordnebula:0.1",
     "build": "tsc -p ./src",
-    "start": "npm run build && node --trace-warnings ./build/app.js"
+    "start": "npm run build && node ./build/app.js"
   },
   "repository": {
     "type": "git",
