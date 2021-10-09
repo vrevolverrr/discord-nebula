@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+      "noImplicitUseStrict": true,
+      "pretty": false,
+      "module": "commonjs",
+      "target": "es2019",
+      "resolveJsonModule": true,
+      "outDir": "./build",
+      "sourceMap": false
+  }
+}
