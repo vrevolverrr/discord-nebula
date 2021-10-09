@@ -12,7 +12,13 @@ interface Choice {
     value: any
 }
 
-export function useCommand(commandFunction: CommandFunction, description: string) {
+export function useCommand(commandFunction: CommandFunction, description: string): void {
+    /**
+     * Set a function as a Discord command
+     * @param {CommandFunction} commandFunction - The function that is called when the command is invoked
+     * @param {string} description - The description of the slash command
+     * 
+    */
     const commandName = commandFunction.name;
     commandsMeta[commandName] = {
         description: description,
@@ -24,8 +30,20 @@ export function useCommand(commandFunction: CommandFunction, description: string
 
 export function useArgument(commandFunction: CommandFunction, name: string, type: string, 
         description: string, required: boolean = false, choices: Choice[] = []) {
-    
+    /**
+     * Adds an argument to a command
+     * @param {CommandFunction} commandFunction - The function that is called when the command is invoked
+     * @param {string} name - The name of the argument
+     * @param {string} type - The type of data the argument takes
+     * @param {string} description - The description of the argument
+     * @param {boolean} required - Whether the argument is required or optional
+     * @param {Choice[]} choices - (optional) The choices provided for the argument
+     * 
+    */
     const commandName = commandFunction.name;
+
+    if (!commandsMeta.hasOwnProperty(commandName)) 
+        throw Error("Command not found in commands meta. Have you added the command with useCommand?")
 
     const argument = {
         name: name,
@@ -35,7 +53,7 @@ export function useArgument(commandFunction: CommandFunction, name: string, type
     }
 
     commandsMeta[commandName]["argument"].push(argument);
-    
+
     const command = commandsMeta[commandName]["command"] as SlashCommandBuilder;
 
     switch(type) {

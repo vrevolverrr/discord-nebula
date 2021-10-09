@@ -20,11 +20,17 @@ export default class Nebula {
     }
 
     async login(): Promise<void> {
+        /**
+         * Logs the client in, establishing a websocket connection to Discord.
+         */
         await this.client.login(this.token);
         logger.info("Succesfully logged in");
     }
 
     start(): void {
+        /**
+         * Create Discord events for the bot to listen to
+         */
         logger.info("Ready! Listening to events");
 
         this.client.on('interactionCreate', async (interaction: CommandInteraction) => {
@@ -34,6 +40,9 @@ export default class Nebula {
     }
 
     async loadCommands(): Promise<Object> {
+        /**
+         * Dynamically imports the commands to push them to the commandsMeta object
+         */
         logger.info("Dynamically importing commands");
 
         return new Promise((resolve, _) => {
@@ -47,6 +56,9 @@ export default class Nebula {
     }
 
     async registerCommands(): Promise<void> {
+        /**
+         * Posts slash commands to Discord API
+         */
         logger.info("Registering slash commands");
 
         const commandsMeta = await this.loadCommands();
